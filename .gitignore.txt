@@ -1,0 +1,17 @@
+.env
+
+__pycache__/
+
+*.pyc
+
+node_modules/
+
+data/raw/
+
+data/processed/
+
+models/trained/
+
+.DS_Store
+
+*.log
