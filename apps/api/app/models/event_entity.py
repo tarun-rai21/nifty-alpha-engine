@@ -1,7 +1,7 @@
-import uuid
+from typing import Optional
 
-from sqlalchemy import Column, Float, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 
@@ -9,23 +9,15 @@ from app.db import Base
 class EventEntity(Base):
     __tablename__ = "event_entities"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    event_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("events.id", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    entity_type = Column(String(50), nullable=False)       # ORG, PERSON, MONEY, DATE, PERCENT
-    entity_text = Column(String(500), nullable=False)      # raw text as extracted by NER
-    entity_normalized = Column(String(500), nullable=True) # cleaned form e.g. "HDFC Bank Ltd." → "HDFCBANK"
-    confidence = Column(Float, nullable=True)              # spaCy NER confidence score
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entity_text: Mapped[str] = mapped_column(String(500), nullable=False)
+    entity_normalized: Mapped[Optional[str]] = mapped_column(String(500))
+    confidence: Mapped[Optional[float]] = mapped_column(Float)
 
-    # Character offsets in source text — useful for NER debugging
-    char_start = Column(Integer, nullable=True)
-    char_end = Column(Integer, nullable=True)
-
-    __table_args__ = (
-        Index("ix_event_entities_event_id", "event_id"),
-        Index("ix_event_entities_entity_type", "entity_type"),
-    )
+    char_start: Mapped[Optional[int]] = mapped_column(Integer)
+    char_end: Mapped[Optional[int]] = mapped_column(Integer)
