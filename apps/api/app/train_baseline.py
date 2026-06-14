@@ -110,12 +110,10 @@ def evaluate(name: str, y_true: np.ndarray, y_pred: np.ndarray) -> None:
     dir_acc  = np.mean(np.sign(y_pred) == np.sign(y_true))
     rmse     = np.sqrt(np.mean((y_true - y_pred) ** 2))
 
-    # Quintile spread: does top-quintile predicted return beat bottom-quintile actual?
-    # This is the real trading signal quality test, not RMSE.
-    df_eval   = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
-    df_eval["quintile"] = pd.qcut(df_eval["y_pred"], q=5, labels=[1, 2, 3, 4, 5])
-    q_returns = df_eval.groupby("quintile")["y_true"].mean().round(4)
-    spread    = q_returns[5] - q_returns[1]   # Q5 - Q1: the long/short spread
+    df_eval = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
+    df_eval["quintile"] = pd.qcut(df_eval["y_pred"].rank(method="first"), q=5, labels=[1, 2, 3, 4, 5])
+    q_returns = df_eval.groupby("quintile", observed=True)["y_true"].mean().round(4)
+    spread = q_returns.iloc[-1] - q_returns.iloc[0]
 
     logger.info("── %s ──────────────────────────────", name)
     logger.info("  IC           : %.4f  (p=%.4f)", ic, pval)
