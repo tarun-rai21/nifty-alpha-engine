@@ -19,7 +19,7 @@ class Event(Base):
         ForeignKey("companies.id"), index=True
     )
     event_type: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    event_subtype: Mapped[Optional[str]] = mapped_column(String(50))
+    event_subtype: Mapped[Optional[str]] = mapped_column(String(500))
     event_timestamp: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime(timezone=True), index=True
     )

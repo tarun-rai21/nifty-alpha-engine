@@ -8,3 +8,4 @@ alembic==1.13.1
 python-dotenv==1.0.1
 pandas
 jugaad-data
+feedparser==6.0.11
