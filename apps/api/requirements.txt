@@ -9,4 +9,5 @@ python-dotenv==1.0.1
 pandas
 jugaad-data
 feedparser==6.0.11
-xgboost
+xgboosts
+scikit-learn
