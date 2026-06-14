@@ -38,6 +38,15 @@ class Feature(Base):
     similar_event_count_90d:    Mapped[Optional[int]]   = mapped_column(Integer)
     avg_forward_return_similar: Mapped[Optional[float]] = mapped_column(Float)
 
+    # ── Group 5: Forward return labels ───────────────────────────
+    # Anchor: adj_close at T-1 (last trading day before event_date).
+    # y_nd = adj_close[T-1 + n] / adj_close[T-1] - 1
+    # Null when insufficient future price data exists (recent events).
+    y_1d:  Mapped[Optional[float]] = mapped_column(Float)
+    y_3d:  Mapped[Optional[float]] = mapped_column(Float)
+    y_5d:  Mapped[Optional[float]] = mapped_column(Float)
+    y_10d: Mapped[Optional[float]] = mapped_column(Float)
+
     # ── Full feature vector (input to XGBoost) ────────────────────
     feature_vector: Mapped[Optional[dict]] = mapped_column(JSONB)
 
