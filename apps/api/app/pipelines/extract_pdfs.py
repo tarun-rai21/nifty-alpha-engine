@@ -67,26 +67,6 @@ EPS_LABELS = {
     "basic and diluted earning per share",
 }
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
-
-def parse_number(val: str | None) -> float | None:
-    """
-    Parse Indian number format.
-    Handles commas and spaces as thousand separators, brackets as negative.
-    e.g. "22 082.60" → 22082.6 | "16,193.00" → 16193.0 | "(500.00)" → -500.0
-    """
-    if not val:
-        return None
-    val = str(val).strip().replace(",", "").replace(" ", "")
-    negative = val.startswith("(") and val.endswith(")")
-    val = val.strip("()")
-    try:
-        n = float(val)
-        return -n if negative else n
-    except ValueError:
-        return None
-
-
 def _label_matches(label: str, candidates: set) -> bool:
     """True if any candidate string appears as a substring of label."""
     return any(c in label for c in candidates)
@@ -158,57 +138,6 @@ def _detect_period_columns(table: list) -> tuple:
 
 
 # ── KV extractor ───────────────────────────────────────────────────────────────
-
-def extract_kv_results(tables: list) -> dict:
-    """
-    Extract key financial metrics from quarterly results PDF tables.
-
-    Iterates all tables in the document. First match per metric wins — this
-    prevents supplementary/consolidated tables from overwriting the standalone
-    P&L values that appear first.
-
-    Column indices are detected per-table from date headers. Falls back to
-    (col 1, col 3) which matches the standard NSE quarterly results layout.
-    """
-    kv = {}
-
-    for table in tables:
-        if not table or len(table) < 2:
-            continue
-
-        current_col, prior_yr_col = _detect_period_columns(table)
-
-        def get(row, col):
-            return parse_number(row[col] if len(row) > col else None)
-
-        for row in table[1:]:
-            if not row or not row[0]:
-                continue
-
-            label = str(row[0]).strip().lower()
-
-            if _label_matches(label, REVENUE_LABELS) and "revenue_current" not in kv:
-                kv["revenue_current"] = get(row, current_col)
-                kv["revenue_prior_yr"] = get(row, prior_yr_col)
-                c, p = kv.get("revenue_current"), kv.get("revenue_prior_yr")
-                if c is not None and p and p != 0:
-                    kv["revenue_yoy"] = (c - p) / abs(p)
-
-            elif _label_matches(label, PAT_LABELS) and "pat_current" not in kv:
-                kv["pat_current"] = get(row, current_col)
-                kv["pat_prior_yr"] = get(row, prior_yr_col)
-                c, p = kv.get("pat_current"), kv.get("pat_prior_yr")
-                if c is not None and p and p != 0:
-                    kv["pat_yoy"] = (c - p) / abs(p)
-
-            elif _label_matches(label, EPS_LABELS) and "eps_current" not in kv:
-                kv["eps_current"] = get(row, current_col)
-                kv["eps_prior_yr"] = get(row, prior_yr_col)
-
-            elif ("ebitda" in label or "ebidta" in label) and "ebitda_current" not in kv:
-                kv["ebitda_current"] = get(row, current_col)
-
-    return kv
 
 
 # ── PDF fetch and extraction ───────────────────────────────────────────────────
@@ -323,8 +252,6 @@ def run(limit: int = None, event_type: str = None):
             # a structured P&L table. board_meeting and merger_acquisition
             # documents don't follow the quarterly results table format.
             kv = {}
-            if event_type_val == "results":
-                kv = extract_kv_results(extracted["tables_json"])
 
             db.add(PdfExtract(
                 event_id=event_id,
