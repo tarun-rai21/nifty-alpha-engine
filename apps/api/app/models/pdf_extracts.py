@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, JSON, ForeignKey, DateTime
 from sqlalchemy.sql import func
 from app.db import Base
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class PdfExtract(Base):
@@ -16,7 +17,7 @@ class PdfExtract(Base):
 
     # Structured extraction
     tables_json = Column(JSON)  # list of tables, each as list of rows
-    kv_pairs = Column(JSON)  # extracted key-value: {"revenue_yoy": 0.202, ...}
+    text_features_json = Column(JSONB, nullable=True)
 
     # Metadata
     page_count = Column(Integer)
