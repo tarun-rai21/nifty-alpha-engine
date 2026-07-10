@@ -49,32 +49,76 @@ The platform is designed to:
 
 ## System Architecture
 
-```text
-Corporate Announcements
-            │
-            ▼
-      Data Ingestion
-            │
-            ▼
-    Event Normalization
-            │
-            ▼
-     Feature Engineering
-            │
-            ▼
-      Signal Generation
-            │
-            ▼
-      ML-Based Ranking
-            │
-            ▼
- Confidence Score Assignment
-            │
-            ▼
- Ranked Opportunity Feed
-            │
-            ▼
- Event-Time Backtesting
+```mermaid
+flowchart TB
+    subgraph Sources["External Sources"]
+        NSE["NSE Corporate Announcements"]
+        NEWS["Business/Financial News"]
+        MKT["Historical Market Data"]
+    end
+
+    subgraph Ingestion["1. Data Ingestion"]
+        ING["Scheduled pipelines (Docker)<br/>fetch, dedupe, store raw"]
+    end
+
+    RAW[("data/raw/<br/>unstructured text")]
+
+    subgraph Normalize["2. Event Normalization"]
+        NORM["Text → structured event record<br/>{stock, event_type, timestamp, sentiment}"]
+    end
+
+    PROC[("data/processed/<br/>structured events, PostgreSQL")]
+
+    subgraph FE["3. Feature Engineering"]
+        FEAT["event category, sentiment, novelty,<br/>frequency, historical impact,<br/>sector context, regime"]
+    end
+
+    subgraph Model["4. Signal Generation & Ranking"]
+        ML["Scikit-Learn / XGBoost<br/>opportunity score + confidence score"]
+    end
+
+    subgraph Explain["5. Deterministic Explanations"]
+        EXP["Rule-based rationale generation<br/>(non-ML, auditable)"]
+    end
+
+    FEED[("Ranked Opportunity Feed")]
+
+    subgraph BT["6. Backtesting Framework"]
+        BTEST["Event-time evaluation<br/>transaction costs, signal decay,<br/>attribution"]
+    end
+
+    LABELS[("data/labels/")]
+
+    subgraph API["Backend API"]
+        FASTAPI["FastAPI service<br/>backend/api/"]
+    end
+
+    subgraph FrontendApp["Frontend"]
+        REACT["React + TypeScript dashboard"]
+    end
+
+    NSE --> ING
+    NEWS --> ING
+    MKT --> ING
+    ING --> RAW
+    RAW --> NORM
+    NORM --> PROC
+    PROC --> FEAT
+    FEAT --> ML
+    MKT -.->|labels for training| LABELS
+    LABELS -.->|supervision| ML
+    ML --> EXP
+    ML --> FEED
+    EXP --> FEED
+    FEED --> BTEST
+    BTEST -.->|feedback: model validity| ML
+    FEED --> FASTAPI
+    FASTAPI --> REACT
+
+    style RAW fill:#3a3a2d,color:#fff
+    style PROC fill:#2d5f3f,color:#fff
+    style FEED fill:#1a3a5f,color:#fff
+    style LABELS fill:#3a3a2d,color:#fff
 ```
 
 ---
@@ -278,3 +322,9 @@ event-driven-alpha-platform/
 ## Long-Term Vision
 
 Build a production-grade event intelligence platform capable of discovering and ranking market opportunities from real-world information flows, enabling systematic and explainable investment decision-making for Indian equities.
+
+---
+
+## License
+
+TBD.
